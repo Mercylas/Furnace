@@ -14,13 +14,16 @@ It will crash if you visit it with a browser
 
 var http = require('http'); //need to http
 var https = require('https');//need to https
-var fs = require('fs');
+var fs = require('fs');//for file reading
+var url = require('url');  //to parse url strings
 
 
-var temperature = 20;  //degrees celsius
-var thermostatTemperature = 30;
+var temperature = 16;  //degrees celsius
+var thermostatTemperature = 20;
 var furnaceState = 'ON';
+var weather = "Clear 25 Degrees";
 
+var ROOT_DIR = 'html';
 var MIME_TYPES = {
     'css': 'text/css',
     'gif': 'image/gif',
@@ -56,6 +59,7 @@ var test = function(){
     alert("I am an alert box!");
 };
 https.createServer(ssl, function (request,response){
+    var urlObj = url.parse(request.url, true, false);
     //console.log('REQUEST: ', request.method, " ", request.url);
     if(request.method==='POST'){
      var jsonData = '';
@@ -68,9 +72,8 @@ https.createServer(ssl, function (request,response){
         /*
         console.log('reqObj: ', reqObj);
         console.log('jsonData: ', jsonData );
-        console.log('typeof jsonData: ', typeof jsonData );
-        */
-        if(reqObj.temperature){
+        console.log('typeof jsonData: ', typeof jsonData );*/
+        if(reqObj.furnace){
         resObj = {
             'thermostat' : thermostatTemperature,
             'temperature' : temperature,
@@ -78,19 +81,26 @@ https.createServer(ssl, function (request,response){
             if(reqObj.state==='ON'){
                 temperature+=2;
             }
-        if(reqObj.change){
+        }else if(reqObj.temperature){
+             resObj = {
+            'thermostat' : thermostatTemperature,
+            'temperature' : temperature,
+            'weather' : weather};
+        }
+        else if(reqObj.change){
             thermostatTemperature += reqObj.change;
             resObj = {
             'thermostat' : thermostatTemperature};
         }
         response.writeHead(200);
         response.end(JSON.stringify(resObj));
-     }
     });
     }
     if(request.method == "GET"){
      //handle GET requests as static file requests
-    filePath = 'index.html';
+     var filePath = ROOT_DIR + urlObj.pathname;
+     if(urlObj.pathname === '/') filePath = ROOT_DIR + '/index.html';
+
      fs.readFile(filePath, function(err,data){
        if(err){
           //report error to console
@@ -103,8 +113,7 @@ https.createServer(ssl, function (request,response){
          response.writeHead(200, {'Content-Type': get_mime(filePath)});
          response.end(data);
        });
-    }
- }).listen(3000);
+     } }).listen(3000);
 console.log('Server Running at http://127.0.0.1:3000  CNTL-C to quit');
 
 setTimeout( function again(){
