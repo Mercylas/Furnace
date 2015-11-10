@@ -7,7 +7,7 @@ function furnaceChange(change){
 
 $(document).ready(function(){
 setInterval(function(){
-  var RequestJSON = JSON.stringify({"thermostat" : "?", "temperature": "?", "weather": "?"});
+  var RequestJSON = JSON.stringify({"thermostat" : "?", "temperature": "?", "weather": "Ottawa"});
   $.post("userText", RequestJSON, function(data, status){
   responseObj = JSON.parse(data);
   document.getElementById("temperature").innerHTML = "Temperature: " + responseObj.temperature;

@@ -21,7 +21,7 @@ var url = require('url');  //to parse url strings
 var temperature = 16;  //degrees celsius
 var thermostatTemperature = 20;
 var furnaceState = 'ON';
-var weather = "Clear 25 Degrees";
+var weatherString = "No Data";
 
 var ROOT_DIR = 'html';
 var MIME_TYPES = {
@@ -55,9 +55,28 @@ key: fs.readFileSync('serverkey.pem'),
 cert: fs.readFileSync('servercert.crt')
 };
 
-var test = function(){
-    alert("I am an alert box!");
-};
+function parseWeather(weatherResponse, res) {
+  var weatherData = '';
+  weatherResponse.on('data', function (chunk) {
+    weatherData += chunk;
+  });
+  weatherResponse.on('end', function () {
+    var weatherObj = JSON.parse(weatherData);
+   weatherString = weatherObj.name + ", " + weatherObj.sys.country + " " + weatherObj.main.temp + " and " + weatherObj.weather[0].description;
+  });
+}
+
+function getWeather(city, res){
+  var wOptions = {
+    host: 'api.openweathermap.org',
+    path: '/data/2.5/weather?q=' + city +
+    '&appid=ac5bc6c83e855f6e0db613a0bc2f99c2'
+  };
+  http.request(wOptions, function(weatherResponse){
+    parseWeather(weatherResponse, res);
+  }).end();
+}
+
 https.createServer(ssl, function (request,response){
     var urlObj = url.parse(request.url, true, false);
     //console.log('REQUEST: ', request.method, " ", request.url);
@@ -82,10 +101,11 @@ https.createServer(ssl, function (request,response){
                 temperature+=2;
             }
         }else if(reqObj.temperature){
+            getWeather(reqObj.weather, response);
              resObj = {
             'thermostat' : thermostatTemperature,
             'temperature' : temperature,
-            'weather' : weather};
+            'weather' : weatherString};
         }
         else if(reqObj.change){
             thermostatTemperature += reqObj.change;
