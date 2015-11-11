@@ -1,3 +1,9 @@
+/*
+James Fitzgerald
+Noah Steinberg
+*/
+
+//Furnace Client
 var https = require('https');
 
 var furnaceState = "OFF";

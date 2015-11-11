@@ -1,16 +1,7 @@
 /*
-Simple server/client pair of node.js apps using the POST
-http method rather than GET.
-
-JSON objects are passed back an forth between the 
-client and server node.js apps using the POST method
-
-Note: This example does not support a browser client
-It will crash if you visit it with a browser
-(As an exercise you can add browser support as well)
+James Fitzgerald
+Noah Steinberg
 */
-
-//Cntl+C to stop server (in Windows CMD console)
 
 var http = require('http'); //need to http
 var https = require('https');//need to https
@@ -54,7 +45,7 @@ var ssl = {
 key: fs.readFileSync('serverkey.pem'),
 cert: fs.readFileSync('servercert.crt')
 };
-
+//Takes Information from JSON
 function parseWeather(weatherResponse, res) {
   var weatherData = '';
   weatherResponse.on('data', function (chunk) {
@@ -62,10 +53,10 @@ function parseWeather(weatherResponse, res) {
   });
   weatherResponse.on('end', function () {
     var weatherObj = JSON.parse(weatherData);
-   weatherString = weatherObj.name + ", " + weatherObj.sys.country + " " + weatherObj.main.temp + " and " + weatherObj.weather[0].description;
+   weatherString = weatherObj.name + ", " + weatherObj.sys.country + ": " + Math.round((weatherObj.main.temp-273.15)) + " degrees celsius and " + weatherObj.weather[0].description;
   });
 }
-
+//API Call
 function getWeather(city, res){
   var wOptions = {
     host: 'api.openweathermap.org',
@@ -79,7 +70,6 @@ function getWeather(city, res){
 
 https.createServer(ssl, function (request,response){
     var urlObj = url.parse(request.url, true, false);
-    //console.log('REQUEST: ', request.method, " ", request.url);
     if(request.method==='POST'){
      var jsonData = '';
      request.on('data', function(chunk) {
@@ -88,10 +78,7 @@ https.createServer(ssl, function (request,response){
      request.on('end', function(){
         var reqObj = JSON.parse(jsonData);
         var resObj;
-        /*
-        console.log('reqObj: ', reqObj);
-        console.log('jsonData: ', jsonData );
-        console.log('typeof jsonData: ', typeof jsonData );*/
+        //from client
         if(reqObj.furnace){
         resObj = {
             'thermostat' : thermostatTemperature,
@@ -100,6 +87,7 @@ https.createServer(ssl, function (request,response){
             if(reqObj.state==='ON'){
                 temperature+=2;
             }
+        //from browser on refresh
         }else if(reqObj.temperature){
             getWeather(reqObj.weather, response);
              resObj = {
@@ -107,6 +95,7 @@ https.createServer(ssl, function (request,response){
             'temperature' : temperature,
             'weather' : weatherString};
         }
+        //from browser on button
         else if(reqObj.change){
             thermostatTemperature += reqObj.change;
             resObj = {
@@ -116,6 +105,7 @@ https.createServer(ssl, function (request,response){
         response.end(JSON.stringify(resObj));
     });
     }
+    //for HTML and JS 
     if(request.method == "GET"){
      //handle GET requests as static file requests
      var filePath = ROOT_DIR + urlObj.pathname;
@@ -135,7 +125,7 @@ https.createServer(ssl, function (request,response){
        });
      } }).listen(3000);
 console.log('Server Running at http://127.0.0.1:3000  CNTL-C to quit');
-
+//Determins if the furnace needs to be on. Logs temperature. Also acts as the temperature decreasing
 setTimeout( function again(){
     temperature--;
    if(temperature<thermostatTemperature-1){
